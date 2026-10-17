@@ -14,4 +14,6 @@ answers or fetch numbers. One batched call per message returns probabilities.
   look-alike tag) and re-run it after every change; all must pass.
 - Typical cost ~$0.00003 and ~0.2 s per call (measured Oct 2026; re-measure).
 
-See `scripts/jev_triage.py` for a minimal stdlib client (fails closed).
+See `scripts/jev_triage.py` for a minimal stdlib client (fails closed: no key, empty
+input, HTTP error, timeout or malformed reply → escalate). Thresholds live in the
+script constants; keep this file and the script in sync.

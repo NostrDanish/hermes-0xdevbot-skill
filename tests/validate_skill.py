@@ -10,8 +10,9 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 NAME_RE = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 DESC_LIMIT = 60  # Hermes skill index truncates longer descriptions
-REF_RE = re.compile(r"(?:\]\(|`|(?:^|[\s\"']))((?:references|templates|scripts|assets|examples)/[^\s)`\"'<>]+)", re.M)
+REF_RE = re.compile(r"(?:\]\(|`|(?:^|[\s\"'/]))((?:references|templates|scripts|assets|examples)/[^\s)`\"'<>]+)", re.M)
 # Terms the Hermes skills_guard flags as critical (crypto-mining heuristics) -> install blocked for community repos.
+# Hermes' scanner hard-blocks the full coin name — always write "XMR" in skill files.
 BLOCKED_TERMS = re.compile(r"xmrig|stratum\+tcp|monero|coinhive|cryptonight", re.I)
 SECRET_RES = [
     re.compile(r"nsec1[02-9ac-hj-np-z]{20,}"),
@@ -37,6 +38,8 @@ def check(skill: Path) -> list:
     name = str(fm.get("name", ""))
     if not NAME_RE.match(name):
         errs.append(f"name '{name}' invalid")
+    if len(name) > 64:
+        errs.append(f"name too long ({len(name)} > 64 chars)")
     if name != skill.name:
         errs.append(f"name '{name}' != directory '{skill.name}'")
     desc = str(fm.get("description", "")).strip()
@@ -45,11 +48,14 @@ def check(skill: Path) -> list:
     for k in ("version", "author", "license"):
         if k not in fm:
             errs.append(f"missing '{k}'")
+    for k in ("author", "license"):
+        if k in fm and not str(fm.get(k) or "").strip():
+            errs.append(f"'{k}' must be a non-empty string")
     if not re.match(r"^\d+\.\d+\.\d+$", str(fm.get("version", ""))):
         errs.append("version must be semver")
     plats = fm.get("platforms", [])
-    if not isinstance(plats, list) or not set(plats) <= {"linux", "macos", "windows"}:
-        errs.append("platforms must be a list of linux/macos/windows")
+    if not isinstance(plats, list) or not plats or not set(plats) <= {"linux", "macos", "windows"}:
+        errs.append("platforms must be a non-empty list of linux/macos/windows")
     hermes = (fm.get("metadata") or {}).get("hermes")
     if not isinstance(hermes, dict) or not isinstance(hermes.get("tags"), list):
         errs.append("metadata.hermes.tags missing")
@@ -64,6 +70,8 @@ def check(skill: Path) -> list:
             errs.append(f"SKILL.md references missing file {r}")
     for f in sorted(p for p in skill.rglob("*") if p.is_file() and "__pycache__" not in p.parts):
         rel = f.relative_to(skill).as_posix()
+        if f.stat().st_size == 0:
+            errs.append(f"{rel}: zero-byte file in skill dir")
         if f.name in FORBIDDEN_IN_SKILL:
             errs.append(f"{rel}: scaffolding file inside skill dir")
         if rel != "SKILL.md" and rel not in refs:

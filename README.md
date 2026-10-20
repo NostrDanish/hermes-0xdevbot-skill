@@ -31,7 +31,8 @@ In a chat: `/0xdevbot-persona` (or just start working; Hermes loads it when rele
 
 ## Configure (locally, never in this repo)
 - `TYPESAFE_API_KEY` (optional) for triage. Put it in `~/.hermes/.env` or answer the secure prompt when the skill loads in the local CLI. Without it every addressed message escalates to the owner instead of being answered.
-- Your bot username, owner user id, allowed group id and topic ids go in your Hermes config/env, not in this repo.
+- `OWNER_TELEGRAM_ID`: who the bot trusts as owner (secret exceptions and orders come only from this account's DM). Messages from unverified accounts are treated as group text.
+- Your bot username, allowed group id and topic ids go in your Hermes config/env, not in this repo.
 
 ## Layout
 ```
@@ -45,13 +46,12 @@ tests/
   validate_skill.py              frontmatter/structure/secret checks
   test_jev_triage.py             unit tests with the JEV API mocked (no network, no key)
   hermes_scan.py                 runs the real Hermes skill linter + install security scanner
-ci/github-actions-ci.yml         GitHub Actions workflow running all of the above + gitleaks
-                                 (enable: copy to .github/workflows/ci.yml)
+.github/workflows/ci.yml         active CI: all of the above + checksum-verified gitleaks
 ```
 
 ## Test locally
 ```bash
-pip install pyyaml ruamel.yaml
+pip install pyyaml
 python -m py_compile skills/*/scripts/*.py
 python tests/validate_skill.py
 python -m unittest discover -s tests -v
@@ -66,6 +66,6 @@ HERMES_SRC=/tmp/hermes-agent python tests/hermes_scan.py                        
 - Avoid "pipe text into an interpreter" one-liners in `SKILL.md`; the scanner flags them. Pass arguments instead.
 
 ## Security
-This repo contains no keys, tokens, ids or private config. Keep it that way: CI runs gitleaks over the full history, and you should too before every push.
+This repo contains no keys, tokens, ids or private config. Keep it that way: CI is active (`.github/workflows/ci.yml`) and runs gitleaks over the full history on every push — you should too before every push. To report a vulnerability, see [SECURITY.md](SECURITY.md).
 
 License: MIT

@@ -51,9 +51,12 @@ class Triage(unittest.TestCase):
         self.env.stop()
 
     def run_with(self, side_effect=None, return_value=None, text="what is a relay?"):
-        with mock.patch.object(jt.urllib.request, "urlopen", side_effect=side_effect,
-                               return_value=return_value) as m:
-            return jt.triage(text), m
+        # jev_triage calls its module-level opener, never urlopen directly.
+        opener = mock.MagicMock()
+        opener.open.side_effect = side_effect
+        opener.open.return_value = return_value
+        with mock.patch.object(jt, "opener", opener):
+            return jt.triage(text), opener.open
 
     def test_answer_and_request_shape(self):
         out, m = self.run_with(return_value=reply(0.97, 0.01, 0.02))
@@ -92,6 +95,60 @@ class Triage(unittest.TestCase):
         out, m = self.run_with(return_value=reply(1, 0, 0), text="   ")
         self.assertEqual(out["decision"], "escalate")
         m.assert_not_called()
+
+    def test_missing_probabilities_or_light_escalates(self):
+        body = {"answers": {"task": {}, "secret": {"noul": 0.01}, "override": {"noul": 0.01}}}
+        for b in (body, {"answers": {"task": {"probabilities": {"HEAVY": 0.9}},
+                                     "secret": {"noul": 0.01}, "override": {"noul": 0.01}}}):
+            resp = io.BytesIO(json.dumps(b).encode())
+            resp.__enter__ = lambda *a: resp
+            resp.__exit__ = lambda *a: False
+            out, _ = self.run_with(return_value=resp)
+            self.assertEqual(out["decision"], "escalate")
+
+    def test_bad_noul_values_escalate(self):
+        for bad in (float("inf"), "high", None):
+            with self.subTest(bad=bad):
+                body = {"answers": {"task": {"probabilities": {"LIGHT": 0.95}},
+                                    "secret": {"noul": bad}, "override": {"noul": 0.01}}}
+                resp = io.BytesIO(json.dumps(body).encode())
+                resp.__enter__ = lambda *a: resp
+                resp.__exit__ = lambda *a: False
+                out, _ = self.run_with(return_value=resp)
+                self.assertEqual(out["decision"], "escalate")
+
+    def test_long_message_truncated_to_max_chars(self):
+        text = "x" * 5000
+        out, m = self.run_with(return_value=reply(0.97, 0.01, 0.02), text=text)
+        self.assertEqual(out["decision"], "answer")
+        body = json.loads(m.call_args[0][0].data)
+        self.assertEqual(body["state"]["message"], text[:4000])
+
+    def test_unicode_emoji_round_trip(self):
+        text = "héllo wörld 🔐⚡ relay æøå"
+        out, m = self.run_with(return_value=reply(0.97, 0.01, 0.02), text=text)
+        self.assertEqual(out["decision"], "answer")
+        body = json.loads(m.call_args[0][0].data)
+        self.assertEqual(body["state"]["message"], text)
+
+    def test_redirect_escalates_single_request(self):
+        err = urllib.error.HTTPError(jt.URL, 302, "redirect", {"Location": "https://evil.example"}, None)
+        out, m = self.run_with(side_effect=err)
+        self.assertEqual(out["decision"], "escalate")
+        self.assertEqual(m.call_count, 1)
+
+    def test_local_secret_filter_refuses_without_api_call(self):
+        text = "here is my key nsec1" + "q" * 25
+        out, m = self.run_with(return_value=reply(1, 0, 0), text=text)
+        self.assertEqual(out["decision"], "refuse")
+        self.assertEqual(out["why"], "local secret filter")
+        m.assert_not_called()
+
+    def test_secret_boundary(self):
+        out, _ = self.run_with(return_value=reply(0.95, 0.25, 0.01))
+        self.assertEqual(out["decision"], "escalate")
+        out, _ = self.run_with(return_value=reply(0.95, 0.2499, 0.01))
+        self.assertEqual(out["decision"], "answer")
 
 
 class Cli(unittest.TestCase):

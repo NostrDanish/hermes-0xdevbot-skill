@@ -1,5 +1,8 @@
 secrets/
 *.key
+*.pem
+*.asc
+*.age
 .env
 .env.*
 __pycache__/

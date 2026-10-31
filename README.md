@@ -46,7 +46,7 @@ tests/
   validate_skill.py              frontmatter/structure/secret checks
   test_jev_triage.py             unit tests with the JEV API mocked (no network, no key)
   hermes_scan.py                 runs the real Hermes skill linter + install security scanner
-.github/workflows/ci.yml         active CI: all of the above + checksum-verified gitleaks
+.github/workflows/ci.yml         validate_skill, unit tests, fail-closed triage check
 ```
 
 ## Test locally

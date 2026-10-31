@@ -1,0 +1,46 @@
+name: ci
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test deps
+        run: python -m pip install --quiet pyyaml ruamel.yaml
+      - name: Compile
+        run: python -m py_compile skills/*/scripts/*.py tests/*.py
+      - name: Validate skill structure and frontmatter
+        run: python tests/validate_skill.py
+      - name: Unit tests (JEV mocked, no secrets)
+        env:
+          TYPESAFE_API_KEY: ""
+        run: python -m unittest discover -s tests -v
+      - name: Dry run without key must escalate
+        run: |
+          out=$(env -u TYPESAFE_API_KEY python skills/0xdevbot-persona/scripts/jev_triage.py "what is a relay?")
+          echo "$out"
+          echo "$out" | python -c 'import json,sys; assert json.load(sys.stdin)["decision"]=="escalate"'
+      - name: Hermes Agent linter + install scanner (upstream main)
+        run: |
+          git clone --depth 1 --quiet https://github.com/NousResearch/hermes-agent.git /tmp/hermes-agent
+          echo "hermes-agent @ $(git -C /tmp/hermes-agent rev-parse --short HEAD)"
+          HERMES_SRC=/tmp/hermes-agent python tests/hermes_scan.py
+      - name: gitleaks (full history, checksum verified)
+        run: |
+          ver=8.28.0
+          file="gitleaks_${ver}_linux_x64.tar.gz"
+          curl -sSfL -o "/tmp/${file}" "https://github.com/gitleaks/gitleaks/releases/download/v${ver}/${file}"
+          curl -sSfL -o /tmp/gitleaks-checksums.txt "https://github.com/gitleaks/gitleaks/releases/download/v${ver}/gitleaks_${ver}_checksums.txt"
+          grep "${file}" /tmp/gitleaks-checksums.txt | (cd /tmp && sha256sum -c -)
+          tar -xzf "/tmp/${file}" -C /tmp gitleaks
+          /tmp/gitleaks git --redact --no-banner -v .

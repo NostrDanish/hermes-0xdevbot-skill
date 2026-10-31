@@ -35,6 +35,8 @@ LOCAL_SECRET_RES = [
     re.compile(r"AGE-SECRET-KEY-1[0-9A-Z]{20,}"),
     re.compile(r"\b\d{8,10}:[A-Za-z0-9_-]{35}\b"),            # Telegram bot token
     re.compile(r"nostr\+walletconnect://"),
+    re.compile(r"\b(?:sk|ghp|gho|ghs|xox[bap])[-_][A-Za-z0-9]{16,}"),
+    re.compile(r"(?i)(?:priv|secret|private[_ ]?key|nsec)[^\n]{0,40}\b[0-9a-f]{64}\b"),
 ]
 
 

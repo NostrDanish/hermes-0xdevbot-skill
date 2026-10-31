@@ -14,7 +14,7 @@ Later updates: `hermes skills check && hermes skills update 0xdevbot-persona`.
 Or add the whole repo as a tap (any future skills here show up in search):
 ```bash
 hermes skills tap add NostrDanish/hermes-0xdevbot-skill
-hermes skills install NostrDanish/hermes-0xdevbot-skill/0xdevbot-persona --category 0xprivacy
+hermes skills install NostrDanish/hermes-0xdevbot-skill/skills/0xdevbot-persona --category 0xprivacy
 ```
 
 **Option B: plain copy (one-liner)**

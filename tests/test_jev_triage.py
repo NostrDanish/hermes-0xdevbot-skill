@@ -144,6 +144,13 @@ class Triage(unittest.TestCase):
         self.assertEqual(out["why"], "local secret filter")
         m.assert_not_called()
 
+    def test_local_secret_filter_catches_api_key_prefixes(self):
+        text = "please use sk-" + "a" * 20
+        out, m = self.run_with(return_value=reply(1, 0, 0), text=text)
+        self.assertEqual(out["decision"], "refuse")
+        self.assertEqual(out["why"], "local secret filter")
+        m.assert_not_called()
+
     def test_secret_boundary(self):
         out, _ = self.run_with(return_value=reply(0.95, 0.25, 0.01))
         self.assertEqual(out["decision"], "escalate")

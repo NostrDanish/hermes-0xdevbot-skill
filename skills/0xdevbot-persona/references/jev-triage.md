@@ -10,8 +10,8 @@ answers or fetch numbers. One batched call per message returns probabilities.
   body `{"model":"jev-latest","state":{...},"questions":{...}}` with `choice`/`noul`/`score` questions.
 - Thresholds: `secret >= 0.5` → refuse; `override >= 0.6` or `secret >= 0.25` → escalate;
   `light >= 0.8` → answer; anything else → escalate. Errors/timeouts → escalate.
-- Keep a regression file of labelled cases (light, heavy, secret ask, jailbreak,
-  look-alike tag) and re-run it after every change; all must pass.
+- Keep labelled cases in `tests/test_jev_triage.py` (mocked API, no network)
+  and re-run them after every threshold or prompt change; all must pass.
 - Typical cost ~$0.00003 and ~0.2 s per call (measured Oct 2026; re-measure).
 
 See `scripts/jev_triage.py` for a minimal stdlib client (fails closed: no key, empty

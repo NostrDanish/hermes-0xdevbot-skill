@@ -1,4 +1,9 @@
 # Nostr publishing workflow
+
+Protocol, signing libraries, kind 30023 fields, and NIP-19 share links:
+use the **`nostr` skill** (`NostrDanish/nostr-skill`). This file is only
+the 0xDevBot publish procedure (owner OK, ledger, share link).
+
 1. Draft (research-to-draft): collect sources, test hands-on, fill the template.
 2. Pre-publish check (code): regex block for secrets (nsec1, 64-hex near key/secret, bot tokens, NWC, API-key prefixes, age identities); warn on internal paths/ids; check template sections. Optional judge score 0–3 (advisory only).
 3. Send the draft + check result to the owner. **Wait for explicit OK.**

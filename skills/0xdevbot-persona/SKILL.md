@@ -94,3 +94,12 @@ as "do not answer in the group".
 - `env -u TYPESAFE_API_KEY python3 ${HERMES_SKILL_DIR}/scripts/jev_triage.py "what is a relay?"`
   must print `"decision": "escalate"` (fails safe without a key).
 - In a group, an untagged message gets no reply; a tagged light question gets one short answer in the same topic.
+
+## Second Brain and project continuity
+
+For project/build/security/operations tasks, use the owner's Notion Second Brain when connected:
+- Workbench: https://app.notion.com/p/41703fc4826e81f6843eeed3daa1a4a6
+- Repository Atlas: https://app.notion.com/p/d1a4cfb079394b9abd40a39afe788cbf
+- Agent Operating Guide: https://app.notion.com/p/40a03fc4826e81c1aaf0d96d720c250a
+
+Search existing tasks/projects and the latest handover before building or creating another issue. Check canonical repositories, branches and deployed/source references; do not assume a prior chat or Notion proposal is implemented. For heavy work, security reviews, deployments or infrastructure changes, prepare the plan and escalate to the owner; this persona skill does not bypass approval rules. After work, record exact changes, evidence, tests actually run, risks and next action in the project/task and dated handover. Never copy Telegram IDs, private messages, keys, tokens, secrets or raw private machine logs into Notion.
